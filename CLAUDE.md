@@ -9,6 +9,7 @@ A minimal SOAP web service demo built with Python 3 and the Spyne framework, plu
 - `soap_demo.py` — SOAP services (Spyne, port 8000)
 - `signing_service.py` — REST signing API (Flask, port 5001)
 - `safesign_mock/` — Mock PKCS#11 SDK package (software RSA keys replacing smartcard hardware)
+- `hl7v3_builder/` — HL7 v3 message builder with fluent API, SOAP wrapping, NHS Spine templates
 
 ## Running the Services
 
@@ -58,6 +59,28 @@ Mirrors the PKCS#11 object model: Library -> Slot -> Token -> Session. Uses real
 
 Default PIN: `1234`. PIN locks after 3 failed attempts.
 
+### HL7 v3 Message Builder (`hl7v3_builder/`)
+
+Fluent Python API for constructing HL7 v3 XML messages for NHS Spine API testing. Builds the three-layer HL7 v3 structure (transmission wrapper, control act wrapper, payload) with correct element ordering and namespacing.
+
+Key modules:
+- `builder.py` — `HL7v3MessageBuilder` fluent API + `HL7v3Message` result class
+- `datatypes.py` — HL7 v3 data type factories: `ii()`, `cd()`, `ts()`, `pn()`, etc.
+- `elements.py` — Composite builders: sender/receiver devices, author, query parameters
+- `templates.py` — Pre-built templates: `patient_demographics_query()`, `scr_query()`, `gp_summary_upload()`
+- `soap_wrapper.py` — SOAP 1.1 + WS-Addressing wrapping via `wrap_in_soap()`
+- `types.py` — Enums: `InteractionType`, `ProcessingCode`, `NHSOid`, etc.
+
+Every class/method has `# HL7_SPEC:` comments explaining the HL7 v3 specification reference.
+
+```python
+from hl7v3_builder.templates import patient_demographics_query
+from hl7v3_builder.soap_wrapper import wrap_in_soap
+
+msg = patient_demographics_query("SENDER-001", "RECEIVER-002").set_query_params(nhs_number="9999999999").build()
+soap_xml = wrap_in_soap(msg, to_url="https://spine.nhs.uk/Spine")
+```
+
 ## Dependencies
 
-All deps in `requirements.txt`: spyne, lxml, cryptography, signxml, flask.
+All deps in `requirements.txt`: spyne, lxml, cryptography, signxml, flask, requests.
