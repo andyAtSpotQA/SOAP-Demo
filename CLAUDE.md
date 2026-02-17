@@ -4,12 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A minimal SOAP web service demo built with Python 3 and the Spyne framework, plus a mock SafeSign SDK signing service.
+A healthcare API test automation platform built with Python 3.
 
 - `soap_demo.py` — SOAP services (Spyne, port 8000)
 - `signing_service.py` — REST signing API (Flask, port 5001)
 - `safesign_mock/` — Mock PKCS#11 SDK package (software RSA keys replacing smartcard hardware)
 - `hl7v3_builder/` — HL7 v3 message builder with fluent API, SOAP wrapping, NHS Spine templates
+- `fhir_builder/` — FHIR R4 resource builder with fluent Bundle API, UK Core profiles, NHS templates
 
 ## Running the Services
 
@@ -79,6 +80,25 @@ from hl7v3_builder.soap_wrapper import wrap_in_soap
 
 msg = patient_demographics_query("SENDER-001", "RECEIVER-002").set_query_params(nhs_number="9999999999").build()
 soap_xml = wrap_in_soap(msg, to_url="https://spine.nhs.uk/Spine")
+```
+
+### FHIR R4 Resource Builder (`fhir_builder/`)
+
+Fluent Python API for constructing FHIR R4 XML Bundles targeting modern NHS APIs (PDS FHIR, GP Connect, EPS). Uses UK Core profiles and NHS identifier systems. No SOAP — FHIR is REST-based.
+
+Key modules:
+- `builder.py` — `FHIRBundleBuilder` fluent API + `FHIRBundle` result class
+- `datatypes.py` — FHIR data type factories: `identifier()`, `human_name()`, `coding()`, `reference()`, etc.
+- `resources.py` — Resource factories: `patient()`, `organization()`, `practitioner()`, `medication_request()`, etc.
+- `templates.py` — Pre-built templates: `patient_search_bundle()`, `gp_connect_structured_record()`, `medication_request_bundle()`, `message_bundle()`
+- `types.py` — Enums: `ResourceType`, `BundleType`, `NHSSystem`, `UKCoreProfile`, etc.
+
+Every class/method has `# FHIR_SPEC:` comments explaining the FHIR R4 specification reference.
+
+```python
+from fhir_builder.templates import patient_search_bundle
+bundle = patient_search_bundle("9999999999", "Smith", "John", "1980-01-15", "male").build()
+print(bundle.to_xml())
 ```
 
 ## Dependencies

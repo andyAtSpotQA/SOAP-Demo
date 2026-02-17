@@ -1,6 +1,6 @@
-# SOAP Demo + Mock SafeSign Signing Service + HL7 v3 Builder
+# SOAP Demo + Mock SafeSign Signing Service + HL7 v3 Builder + FHIR R4 Builder
 
-A healthcare API test automation platform: SOAP demo service, mock SafeSign PKCS#11 SDK with REST signing API, and an HL7 v3 message builder for NHS Spine interactions.
+A healthcare API test automation platform: SOAP demo service, mock SafeSign PKCS#11 SDK with REST signing API, HL7 v3 message builder for NHS Spine interactions, and FHIR R4 resource builder for modern NHS APIs.
 
 ## Components
 
@@ -10,6 +10,7 @@ A healthcare API test automation platform: SOAP demo service, mock SafeSign PKCS
 | Signing Service | `signing_service.py` | 5001 | Flask REST API for digital signatures |
 | Mock SafeSign SDK | `safesign_mock/` | — | Software PKCS#11 simulation with real RSA crypto |
 | HL7 v3 Builder | `hl7v3_builder/` | — | Fluent API for constructing HL7 v3 XML messages |
+| FHIR R4 Builder | `fhir_builder/` | — | Fluent API for constructing FHIR R4 XML Bundles |
 
 ## Quick Start
 
@@ -147,6 +148,56 @@ print(msg.to_xml())
 | `gp_summary_upload()` | REPC_IN150016UK05 | GP Summary document upload |
 
 Every class and method has `# HL7_SPEC:` comments referencing the relevant HL7 v3 specification.
+
+## FHIR R4 Resource Builder
+
+The `fhir_builder/` package provides a fluent Python API for constructing FHIR R4 XML Bundles targeting modern NHS APIs (PDS FHIR, GP Connect, EPS). Resources use UK Core profiles and NHS identifier systems.
+
+### Using a Template
+
+```python
+from fhir_builder.templates import patient_search_bundle
+
+# Build a PDS-style patient search result
+bundle = (
+    patient_search_bundle("9999999999", "Smith", "John", "1980-01-15", "male")
+    .build()
+)
+print(bundle.to_xml())
+
+# Sign via the signing service
+import requests
+resp = requests.post("http://localhost:5001/sign/xml",
+                     json={"xml": bundle.to_xml(), "pin": "1234"})
+signed_xml = resp.json()["signed_xml"]
+```
+
+### Using the Builder Directly
+
+```python
+from fhir_builder import FHIRBundleBuilder, BundleType
+from fhir_builder.resources import patient, organization
+
+bundle = (
+    FHIRBundleBuilder()
+    .set_type(BundleType.SEARCHSET)
+    .set_timestamp()
+    .add_entry(patient("9999999999", "Smith", "John", "1980-01-15", "male"))
+    .build()
+)
+print(bundle.to_xml())
+```
+
+### Available Templates
+
+| Function | Bundle Type | Description |
+|----------|-------------|-------------|
+| `patient_search_bundle()` | searchset | PDS-style patient search result |
+| `message_bundle()` | message | Generic FHIR message with MessageHeader |
+| `gp_connect_structured_record()` | searchset | GP Connect structured record response |
+| `medication_request_bundle()` | transaction | EPS-style prescription submission |
+
+Every class and method has `# FHIR_SPEC:` comments referencing the relevant FHIR R4 specification.
 
 ## Dependencies
 
