@@ -1,0 +1,7 @@
+tests/
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.claude/
+CLAUDE.md

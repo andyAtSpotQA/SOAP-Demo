@@ -1,0 +1,8 @@
+FROM python:3.13-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY safesign_mock/ safesign_mock/
+COPY hl7v3_builder/ hl7v3_builder/
+COPY fhir_builder/ fhir_builder/
+COPY soap_demo.py signing_service.py ./

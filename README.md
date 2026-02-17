@@ -12,7 +12,20 @@ A healthcare API test automation platform: SOAP demo service, mock SafeSign PKCS
 | HL7 v3 Builder | `hl7v3_builder/` | — | Fluent API for constructing HL7 v3 XML messages |
 | FHIR R4 Builder | `fhir_builder/` | — | Fluent API for constructing FHIR R4 XML Bundles |
 
-## Quick Start
+## Quick Start — Docker (recommended)
+
+```bash
+docker compose up --build -d
+
+# Both services start automatically:
+#   SOAP service  → http://localhost:8000      (WSDL at ?wsdl)
+#   Signing API   → http://localhost:5001      (health at /health)
+
+docker compose ps          # check both are healthy
+docker compose down        # tear down
+```
+
+## Quick Start — Local
 
 ```bash
 pip install -r requirements.txt

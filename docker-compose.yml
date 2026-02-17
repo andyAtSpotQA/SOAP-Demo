@@ -1,0 +1,22 @@
+services:
+  soap-service:
+    build: .
+    command: python soap_demo.py
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/?wsdl')"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  signing-service:
+    build: .
+    command: python signing_service.py
+    ports:
+      - "5001:5001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
