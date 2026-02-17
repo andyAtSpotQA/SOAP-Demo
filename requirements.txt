@@ -1,4 +1,4 @@
-spyne>=2.14
+spyne @ git+https://github.com/arskom/spyne.git@master
 lxml>=4.9
 cryptography>=42.0
 signxml>=3.2
