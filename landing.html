@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Healthcare API Test Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2330;
+      --border:    #30363d;
+      --accent:    #2f81f7;
+      --accent2:   #3fb950;
+      --accent3:   #d2a8ff;
+      --accent4:   #ffa657;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --danger:    #f85149;
+      --tag-bg:    #1f2937;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 64px 24px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(47,129,247,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(47,129,247,0.12);
+      border: 1px solid rgba(47,129,247,0.3);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .hero-badge span { width: 6px; height: 6px; background: var(--accent2); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+
+    h1 {
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #e6edf3 0%, #8b949e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 17px;
+      color: var(--muted);
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+    .hero-ports {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .port-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      transition: border-color 0.2s;
+    }
+    .port-pill:hover { border-color: var(--accent); }
+    .port-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); }
+
+    /* ── Layout ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .section { padding: 48px 0; }
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── Service cards ── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 48px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+    .card h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .card p { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+    .card-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--tag-bg);
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .tag.green { background: rgba(63,185,80,0.12); color: var(--accent2); }
+    .tag.blue  { background: rgba(47,129,247,0.12); color: var(--accent); }
+    .tag.purple{ background: rgba(210,168,255,0.12); color: var(--accent3); }
+    .tag.orange{ background: rgba(255,166,87,0.12); color: var(--accent4); }
+
+    /* ── Endpoint tables ── */
+    .service-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .service-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .service-header h3 { font-size: 15px; font-weight: 600; }
+    .service-header .url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      margin-left: auto;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 10px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    td { padding: 12px 24px; font-size: 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .method {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .method.get  { background: rgba(63,185,80,0.15);  color: var(--accent2); }
+    .method.post { background: rgba(47,129,247,0.15); color: var(--accent); }
+    .path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .auth-badge {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .auth-badge.pin  { background: rgba(255,166,87,0.12); color: var(--accent4); }
+    .auth-badge.none { background: rgba(63,185,80,0.12);  color: var(--accent2); }
+
+    /* ── Code blocks ── */
+    .code-section { margin-bottom: 24px; }
+    .code-tabs { display: flex; gap: 2px; margin-bottom: 0; }
+    .code-tab {
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      transition: all 0.15s;
+    }
+    .code-tab.active { background: var(--surface); color: var(--text); border-color: var(--border); }
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0 8px 8px 8px;
+      padding: 20px 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-x: auto;
+      position: relative;
+    }
+    .code-block .kw  { color: var(--accent3); }
+    .code-block .str { color: var(--accent2); }
+    .code-block .key { color: var(--accent); }
+    .code-block .cmt { color: var(--muted); font-style: italic; }
+    .copy-btn {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+
+    /* ── Journey patterns ── */
+    .patterns { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .pattern {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: border-color 0.2s;
+    }
+    .pattern:hover { border-color: var(--accent); }
+    .pattern-letter {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: rgba(47,129,247,0.15);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 12px;
+    }
+    .pattern h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .pattern p  { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+    .pattern ol { padding-left: 18px; }
+    .pattern ol li { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+    .pattern ol li code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      background: rgba(47,129,247,0.1);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* ── Virtuoso tips ── */
+    .tips { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .tip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .tip-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .tip-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent2); }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ── SOAP note ── */
+    .soap-note {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .soap-note code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      background: rgba(47,129,247,0.1);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Hero ── -->
+<div class="hero">
+  <div class="hero-badge"><span></span> Live Services</div>
+  <h1>Healthcare API Test Platform</h1>
+  <p>A mock NHS healthcare messaging infrastructure for API test automation — digital signing, HL7 v3, and FHIR R4, all exposed as clean REST and SOAP endpoints.</p>
+  <div class="hero-ports">
+    <div class="port-pill"><span class="dot"></span> Signing REST API &nbsp;·&nbsp; localhost:5001</div>
+    <div class="port-pill"><span class="dot"></span> SOAP Service &nbsp;·&nbsp; localhost:8000</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ── What is this ── -->
+  <div class="section">
+    <div class="section-title">Platform Overview</div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon" style="background:rgba(47,129,247,0.12)">🔐</div>
+        <h3>Mock SafeSign SDK</h3>
+        <p>Software simulation of a PKCS#11 smartcard. Real RSA 2048 cryptography, in-memory key storage. Swap for real hardware with one line change.</p>
+        <div class="card-meta">
+          <span class="tag green">RSA-2048</span>
+          <span class="tag blue">SHA-256</span>
+          <span class="tag">PKCS#11</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(210,168,255,0.12)">📋</div>
+        <h3>HL7 v3 Builder</h3>
+        <p>Fluent Python API for constructing NHS Spine HL7 v3 XML messages. Builds the three-layer structure with correct namespacing and element ordering.</p>
+        <div class="card-meta">
+          <span class="tag purple">NHS Spine</span>
+          <span class="tag">PDS</span>
+          <span class="tag">SCR</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(63,185,80,0.12)">🏥</div>
+        <h3>FHIR R4 Builder</h3>
+        <p>Fluent Python API for constructing FHIR R4 XML Bundles targeting modern NHS APIs. UK Core profiles, NHS identifier systems.</p>
+        <div class="card-meta">
+          <span class="tag green">FHIR R4</span>
+          <span class="tag blue">UK Core</span>
+          <span class="tag">GP Connect</span>
+          <span class="tag">EPS</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(255,166,87,0.12)">🔑</div>
+        <h3>Signing REST API</h3>
+        <p>Flask REST wrapper around the mock SDK. Sign raw data or XML, verify signatures, manage certificates — all over HTTP. Default PIN: <code style="font-family:monospace;color:var(--accent4)">1234</code>.</p>
+        <div class="card-meta">
+          <span class="tag orange">port 5001</span>
+          <span class="tag">REST</span>
+          <span class="tag">JSON</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Signing REST API ── -->
+  <div class="section">
+    <div class="section-title">Signing REST API — port 5001</div>
+
+    <div class="service-block">
+      <div class="service-header">
+        <span>🔍</span>
+        <h3>Read-only endpoints — no PIN required</h3>
+        <span class="url">http://localhost:5001</span>
+      </div>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td class="path">/health</td>
+            <td><span class="auth-badge none">None</span></td>
+            <td>SDK status, token info, PIN retries remaining</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td class="path">/certificate</td>
+            <td><span class="auth-badge none">None</span></td>
+            <td>Signing certificate in PEM format</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td class="path">/certificate/info</td>
+            <td><span class="auth-badge none">None</span></td>
+            <td>Certificate metadata: subject, expiry, key size, algorithm</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td class="path">/verify/raw</td>
+            <td><span class="auth-badge none">None</span></td>
+            <td>Verify a raw base64 signature against base64 data</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td class="path">/verify/xml</td>
+            <td><span class="auth-badge none">None</span></td>
+            <td>Verify an enveloped XML digital signature</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td class="path">/admin/token-info</td>
+            <td><span class="auth-badge none">None</span></td>
+            <td>Detailed token information</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="service-block">
+      <div class="service-header">
+        <span>🔐</span>
+        <h3>PIN-protected endpoints</h3>
+        <span class="url">Default PIN: 1234</span>
+      </div>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td class="path">/sign/raw</td>
+            <td><span class="auth-badge pin">PIN</span></td>
+            <td>Sign base64-encoded data → returns base64 signature</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td class="path">/sign/xml</td>
+            <td><span class="auth-badge pin">PIN</span></td>
+            <td>Create enveloped XML digital signature</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td class="path">/admin/generate-keypair</td>
+            <td><span class="auth-badge pin">PIN</span></td>
+            <td>Generate new RSA 2048 key pair on the token</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td class="path">/admin/generate-cert</td>
+            <td><span class="auth-badge pin">PIN</span></td>
+            <td>Create a new self-signed certificate</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td class="path">/admin/change-pin</td>
+            <td><span class="auth-badge pin">PIN</span></td>
+            <td>Change the token PIN (body: old_pin + new_pin)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Example calls -->
+    <div class="code-section">
+      <div class="code-tabs">
+        <div class="code-tab active">POST /sign/raw</div>
+      </div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="cmt">// Request body</span>
+{
+  <span class="key">"data"</span>: <span class="str">"aGVsbG8gd29ybGQ="</span>,   <span class="cmt">// base64-encoded payload</span>
+  <span class="key">"pin"</span>:  <span class="str">"1234"</span>
+}
+
+<span class="cmt">// Response 200</span>
+{
+  <span class="key">"signature"</span>: <span class="str">"KGr5zTz2..."</span>,  <span class="cmt">// base64 RSA signature</span>
+  <span class="key">"mechanism"</span>: <span class="str">"SHA256_RSA_PKCS"</span>,
+  <span class="key">"label"</span>:     <span class="str">"default"</span>
+}</div>
+    </div>
+
+    <div class="code-section">
+      <div class="code-tabs">
+        <div class="code-tab active">POST /verify/raw</div>
+      </div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="cmt">// Request body — no PIN needed</span>
+{
+  <span class="key">"data"</span>:      <span class="str">"aGVsbG8gd29ybGQ="</span>,
+  <span class="key">"signature"</span>: <span class="str">"KGr5zTz2..."</span>
+}
+
+<span class="cmt">// Response 200</span>
+{ <span class="key">"valid"</span>: <span class="kw">true</span> }</div>
+    </div>
+
+    <div class="code-section">
+      <div class="code-tabs">
+        <div class="code-tab active">POST /sign/xml</div>
+      </div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="cmt">// Request body</span>
+{
+  <span class="key">"xml"</span>: <span class="str">"&lt;Invoice&gt;&lt;id&gt;1&lt;/id&gt;&lt;amount&gt;120&lt;/amount&gt;&lt;/Invoice&gt;"</span>,
+  <span class="key">"pin"</span>: <span class="str">"1234"</span>
+}
+
+<span class="cmt">// Response 200</span>
+{ <span class="key">"signed_xml"</span>: <span class="str">"&lt;?xml version='1.0'...&lt;ds:Signature&gt;...&lt;/ds:Signature&gt;&lt;/Invoice&gt;"</span> }</div>
+    </div>
+
+    <div class="code-section">
+      <div class="code-tabs">
+        <div class="code-tab active">POST /verify/xml</div>
+      </div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="cmt">// Request body — no PIN needed, accepts "xml" or "signed_xml"</span>
+{
+  <span class="key">"signed_xml"</span>: <span class="str">"&lt;?xml version='1.0'...&lt;ds:Signature&gt;...&lt;/Invoice&gt;"</span>
+}
+
+<span class="cmt">// Response 200</span>
+{ <span class="key">"valid"</span>: <span class="kw">true</span> }</div>
+    </div>
+  </div>
+
+  <!-- ── Virtuoso Journey Patterns ── -->
+  <div class="section">
+    <div class="section-title">Virtuoso Journey Patterns</div>
+    <div class="patterns">
+      <div class="pattern">
+        <div class="pattern-letter">B</div>
+        <h4>Sign &amp; Verify Raw</h4>
+        <p>Sign a base64 payload then verify the signature.</p>
+        <ol>
+          <li><code>POST /sign/raw</code> — capture <code>signature</code></li>
+          <li><code>POST /verify/raw</code> — assert <code>valid: true</code></li>
+        </ol>
+      </div>
+      <div class="pattern">
+        <div class="pattern-letter">C</div>
+        <h4>XML Sign &amp; Verify</h4>
+        <p>Sign an XML document then verify the enveloped signature.</p>
+        <ol>
+          <li><code>POST /sign/xml</code> — capture <code>signed_xml</code></li>
+          <li><code>POST /verify/xml</code> — pass response directly (accepts <code>"signed_xml"</code> or <code>"xml"</code>) — assert <code>valid: true</code></li>
+        </ol>
+      </div>
+      <div class="pattern">
+        <div class="pattern-letter">D</div>
+        <h4>Health &amp; Cert Checks</h4>
+        <p>Assert service is up and certificate is valid — no PIN needed.</p>
+        <ol>
+          <li><code>GET /health</code> — assert <code>status: ok</code></li>
+          <li><code>GET /certificate/info</code> — assert key size = 2048</li>
+        </ol>
+      </div>
+      <div class="pattern">
+        <div class="pattern-letter">E</div>
+        <h4>Wrong PIN / Lockout</h4>
+        <p>Negative test: verify PIN lockout behaviour after 3 failures.</p>
+        <ol>
+          <li><code>POST /sign/raw</code> with bad PIN × 3</li>
+          <li><code>GET /health</code> — assert <code>is_locked: true</code></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Virtuoso Tips ── -->
+  <div class="section">
+    <div class="section-title">Virtuoso Authoring Tips</div>
+    <div class="tips">
+      <div class="tip">
+        <div class="tip-label">Variable syntax</div>
+        <div class="tip-value">{{{variable_name}}}</div>
+      </div>
+      <div class="tip">
+        <div class="tip-label">Variable definition</div>
+        <div class="tip-value" style="font-family:Inter,sans-serif;font-size:13px;color:var(--muted)">Journey Input Mapping panel</div>
+      </div>
+      <div class="tip">
+        <div class="tip-label">Output mapping value</div>
+        <div class="tip-value">$response.data.signature</div>
+      </div>
+      <div class="tip">
+        <div class="tip-label">Default values</div>
+        <div class="tip-value" style="font-family:Inter,sans-serif;font-size:13px;color:var(--muted)">Raw — no surrounding quotes</div>
+      </div>
+      <div class="tip">
+        <div class="tip-label">PIN variable</div>
+        <div class="tip-value">pin = 1234</div>
+      </div>
+      <div class="tip">
+        <div class="tip-label">Content-Type header</div>
+        <div class="tip-value">application/json</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Healthcare API Test Platform &nbsp;·&nbsp; Mock SafeSign SDK + HL7 v3 + FHIR R4 &nbsp;·&nbsp; For test automation use only
+</footer>
+
+<script>
+  function copyCode(btn) {
+    const block = btn.parentElement;
+    const text = block.innerText.replace('Copy\n','').trim();
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    });
+  }
+</script>
+</body>
+</html>

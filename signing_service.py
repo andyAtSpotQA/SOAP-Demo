@@ -32,6 +32,8 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("signing_service")
 
+API_VERSION = "1.0.5"
+
 # ---------------------------------------------------------------------------
 # Global state — mirrors what a real integration would hold as module-level
 # references to the PKCS#11 library, token, and default key/cert handles.
@@ -119,6 +121,9 @@ def sign_raw():
     if not data_b64:
         return _error("'data' (base64) is required")
 
+    # Strip surrounding quotes that some clients add
+    data_b64 = data_b64.strip().strip('"').strip("'")
+
     try:
         data = base64.b64decode(data_b64)
     except Exception:
@@ -141,6 +146,7 @@ def sign_raw():
             "signature": base64.b64encode(signature).decode(),
             "mechanism": "SHA256_RSA_PKCS",
             "label": label,
+            "api_version": API_VERSION,
         })
     except PKCS11Error as e:
         return _error(str(e))
@@ -188,8 +194,11 @@ def sign_xml():
         signer = XMLSigner(method=methods.enveloped)
         signed_root = signer.sign(root, key=priv_key, cert=[cert])
         signed_xml = etree.tostring(signed_root, xml_declaration=True, encoding="UTF-8").decode()
+        # Strip newlines from PEM cert formatting to avoid issues with
+        # clients that mangle \n during JSON round-tripping (e.g. Virtuoso)
+        signed_xml = signed_xml.replace("\n", "")
 
-        return jsonify({"signed_xml": signed_xml})
+        return jsonify({"signed_xml": signed_xml, "api_version": API_VERSION})
     except PKCS11Error as e:
         return _error(str(e))
     except etree.XMLSyntaxError as e:
@@ -261,11 +270,20 @@ def verify_raw():
     Uses the default certificate's public key.
     """
     body = request.get_json(silent=True) or {}
-    data_b64 = body.get("data")
-    sig_b64 = body.get("signature")
+    if isinstance(body, dict):
+        data_b64 = body.get("data")
+        sig_b64 = body.get("signature")
+    else:
+        data_b64 = None
+        sig_b64 = None
 
     if not data_b64 or not sig_b64:
         return _error("'data' and 'signature' (base64) are required")
+
+    # Strip surrounding quotes that some clients add
+    data_b64 = data_b64.strip().strip('"').strip("'")
+    sig_b64 = sig_b64.strip().strip('"').strip("'")
+
 
     try:
         data = base64.b64decode(data_b64)
@@ -284,25 +302,47 @@ def verify_raw():
     public_key = cert.public_key()
     try:
         public_key.verify(signature, data, padding.PKCS1v15(), hashes.SHA256())
-        return jsonify({"valid": True})
+        return jsonify({"valid": True, "api_version": API_VERSION})
     except Exception:
-        return jsonify({"valid": False})
+        return jsonify({"valid": False, "api_version": API_VERSION})
 
 
 @app.route("/verify/xml", methods=["POST"])
 def verify_xml():
     """Verify an enveloped XML signature.
 
-    JSON body: { "xml": "<signed XML string>" }
+    Accepts:
+      - Raw XML body (Content-Type: text/xml or text/plain)
+      - JSON body: { "xml": "<signed XML>" } or { "signed_xml": "<signed XML>" }
     """
     from lxml import etree
     from signxml import XMLVerifier
 
-    body = request.get_json(silent=True) or {}
-    xml_str = body.get("xml")
+    xml_str = None
+    content_type = request.content_type or ""
+
+    if "xml" in content_type or "text/plain" in content_type:
+        # Raw XML body — no JSON wrapping
+        xml_str = request.get_data(as_text=True)
+    else:
+        # Try JSON body
+        body = request.get_json(silent=True) or {}
+        if isinstance(body, dict):
+            xml_str = body.get("xml") or body.get("signed_xml")
+        elif isinstance(body, str):
+            xml_str = body
+
+    # Last resort: extract XML from raw body regardless of content type
+    if not xml_str or not xml_str.strip().startswith("<"):
+        import re
+        raw = request.get_data(as_text=True)
+        unescaped = raw.replace('\\"', '"').replace('\\n', '')
+        match = re.search(r"(<\?xml.*</[^>]+>|<[A-Za-z].*</[^>]+>)", unescaped, re.DOTALL)
+        if match:
+            xml_str = match.group(1)
 
     if not xml_str:
-        return _error("'xml' is required")
+        return _error("'xml' (or 'signed_xml') is required")
 
     try:
         session = token.open(rw=True, user_pin=None)
@@ -311,12 +351,16 @@ def verify_xml():
         session.close()
     except PKCS11Error as e:
         return _error(str(e), 404)
+    except Exception as e:
+        return _error(f"Failed to retrieve certificate: {e}", 500)
 
     try:
         verified_data = XMLVerifier().verify(xml_str.encode(), x509_cert=cert)
-        return jsonify({"valid": True})
+        return jsonify({"valid": True, "api_version": API_VERSION})
+    except etree.XMLSyntaxError as e:
+        return jsonify({"valid": False, "error": f"Invalid XML: {e}", "api_version": API_VERSION})
     except Exception as e:
-        return jsonify({"valid": False, "error": str(e)})
+        return jsonify({"valid": False, "error": str(e), "api_version": API_VERSION})
 
 
 # ---------------------------------------------------------------------------
